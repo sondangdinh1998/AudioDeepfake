@@ -182,11 +182,8 @@ class Conformer(nn.Module):
         nn.init.normal_(self.cls_tokens)
 
         self.embedding = nn.Linear(4 * pooling_emb_dim, pooling_emb_dim)
-        self.classifier = nn.Sequential(
-            nn.Linear(pooling_emb_dim, pooling_emb_dim // 2),
-            nn.SiLU(),
-            nn.Linear(pooling_emb_dim // 2, 1, bias=False),
-        )
+        self.center = nn.Parameter(torch.empty(1, pooling_emb_dim))
+        nn.init.kaiming_uniform_(self.center, 0.25)
 
     def forward(
         self, xs: torch.Tensor, x_lens: torch.Tensor
@@ -230,10 +227,16 @@ class Conformer(nn.Module):
         e5 = self.embedding(e5)
 
         # Score
-        c1 = self.classifier(e1).squeeze(1)
-        c2 = self.classifier(e2).squeeze(1)
-        c3 = self.classifier(e3).squeeze(1)
-        c4 = self.classifier(e4).squeeze(1)
-        c5 = self.classifier(e5).squeeze(1)
+        c1 = self._classifier(e1)
+        c2 = self._classifier(e2)
+        c3 = self._classifier(e3)
+        c4 = self._classifier(e4)
+        c5 = self._classifier(e5)
 
-        return c1, c2, c3, c4, c5
+        return c5, c4, c3, c2, c1
+
+    def _classifier(self, embedding: torch.Tensor):
+        w = F.normalize(self.center, p=2, dim=1)
+        x = F.normalize(embedding, p=2, dim=1)
+        y = torch.matmul(x, w.T).squeeze(1)
+        return y

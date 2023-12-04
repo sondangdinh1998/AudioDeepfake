@@ -51,7 +51,7 @@ class AudioDeepfakeDetectionTask(LightningModule):
     ) -> torch.Tensor:
 
         xs, x_lens, ys = batch
-        c1, c2, c3, c4, c5 = self.network(xs, x_lens)
+        c5, c4, c3, c2, c1 = self.network(xs, x_lens)
 
         l1, _ = self.criterion(c1, ys)
         l2, _ = self.criterion(c2, ys)
@@ -69,7 +69,7 @@ class AudioDeepfakeDetectionTask(LightningModule):
     ) -> torch.Tensor:
 
         xs, x_lens, ys = batch
-        c1, c2, c3, c4, c5 = self.network(xs, x_lens)
+        c5, c4, c3, c2, c1 = self.network(xs, x_lens)
 
         l1, _ = self.criterion(c1, ys)
         l2, _ = self.criterion(c2, ys)
