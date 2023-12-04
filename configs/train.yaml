@@ -2,8 +2,11 @@ task:
   _target_: lightfake.tasks.detection.AudioDeepfakeDetectionTask
 
   dataset:
+    labels: &labels [bonafide, spoofing]
+
     train_ds:
       _target_: lightfake.datas.dataset.AudioDeepfakeDetectionDataset
+      labels: *labels
       filepaths: ???
 
       augmentation:
@@ -48,6 +51,7 @@ task:
 
     val_ds:
       _target_: lightfake.datas.dataset.AudioDeepfakeDetectionDataset
+      labels: *labels
       filepaths: ???
 
     loaders:
@@ -104,6 +108,6 @@ callbacks:
 
 trainer:
   max_epochs: 50
-  strategy: ddp_find_unused_parameters_false
+  strategy: ddp_find_unused_parameters_true
   accelerator: gpu
   devices: -1

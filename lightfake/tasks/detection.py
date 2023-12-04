@@ -18,7 +18,6 @@ class AudioDeepfakeDetectionTask(LightningModule):
         self.save_hyperparameters()
         self.network = instantiate(self.hparams.model.network)
         self.criterion = instantiate(self.hparams.model.criterion)
-        self.metric = instantiate(self.hparams.model.metric)
 
     def train_dataloader(self) -> DataLoader:
         dataset = instantiate(self.hparams.dataset.train_ds, _recursive_=False)
@@ -53,11 +52,11 @@ class AudioDeepfakeDetectionTask(LightningModule):
         xs, x_lens, ys = batch
         c5, c4, c3, c2, c1 = self.network(xs, x_lens)
 
-        l1, _ = self.criterion(c1, ys)
-        l2, _ = self.criterion(c2, ys)
-        l3, _ = self.criterion(c3, ys)
-        l4, _ = self.criterion(c4, ys)
-        l5, _ = self.criterion(c5, ys)
+        l1 = self.criterion(c1, ys)
+        l2 = self.criterion(c2, ys)
+        l3 = self.criterion(c3, ys)
+        l4 = self.criterion(c4, ys)
+        l5 = self.criterion(c5, ys)
 
         loss = 4.0 * l1 + 3.0 * l2 + 2.0 * l3 + 1.0 * l4 + 1.0 * l5
         self.log("train_loss", loss, sync_dist=True, prog_bar=True)
@@ -71,11 +70,11 @@ class AudioDeepfakeDetectionTask(LightningModule):
         xs, x_lens, ys = batch
         c5, c4, c3, c2, c1 = self.network(xs, x_lens)
 
-        l1, _ = self.criterion(c1, ys)
-        l2, _ = self.criterion(c2, ys)
-        l3, _ = self.criterion(c3, ys)
-        l4, _ = self.criterion(c4, ys)
-        l5, _ = self.criterion(c5, ys)
+        l1 = self.criterion(c1, ys)
+        l2 = self.criterion(c2, ys)
+        l3 = self.criterion(c3, ys)
+        l4 = self.criterion(c4, ys)
+        l5 = self.criterion(c5, ys)
 
         loss = 4.0 * l1 + 3.0 * l2 + 2.0 * l3 + 1.0 * l4 + 1.0 * l5
         self.log("val_loss", loss, sync_dist=True, prog_bar=True)

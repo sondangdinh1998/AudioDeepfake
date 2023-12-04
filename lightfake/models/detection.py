@@ -25,8 +25,8 @@ class LightningADD:
         self, speeches: List[torch.Tensor], sample_rates: List[int]
     ) -> List[str]:
         features, lengths = self._preprocess(speeches, sample_rates)
-        embeds = self.network(features, lengths)
-        return embeds
+        scores, *_ = self.network(features, lengths)
+        return scores
 
     def _preprocess(
         self, speeches: List[torch.Tensor], sample_rates: List[int]
