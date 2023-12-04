@@ -1,0 +1,109 @@
+task:
+  _target_: lightfake.tasks.detection.AudioDeepfakeDetectionTask
+
+  dataset:
+    train_ds:
+      _target_: lightfake.datas.dataset.AudioDeepfakeDetectionDataset
+      filepaths: ???
+
+      augmentation:
+        audio_augment:
+          trim_sample:
+            _target_: lightfake.datas.augment.TrimAudioSample
+            factor: 0.3
+            min_length: 1.0
+            max_length: 3.0
+            probability: 1.0
+
+          speed_perturbation:
+            _target_: lightfake.datas.augment.SpeedPerturbation
+            orig_freq: 16000
+            factors: [0.8, 0.9, 1.0, 1.1, 1.2]
+            probability: 1.0
+
+          # rir_noise:
+          #   _target_: lightfake.datas.augment.ApplyImpulseResponse
+          #   rir_filepath_16k: /home/cybervoice/data/noise/impulse_response/metadata.json
+          #   second_before_peak: 0.01
+          #   second_after_peak: 0.5
+          #   probability: 0.2
+
+          # background_noise:
+          #   _target_: lightfake.datas.augment.AddBackgroundNoise
+          #   noise_filepath_16k: /home/cybervoice/data/noise/background_noise/metadata.json
+          #   min_snr_db: 0.0
+          #   max_snr_db: 30.0
+          #   probability: 0.2
+
+        feature_augment:
+          freq_masking:
+            _target_: lightfake.datas.augment.FrequencyMasking
+            freq_masks: 1
+            freq_width: 27
+
+          time_masking:
+            _target_: lightfake.datas.augment.TimeMasking
+            time_masks: 10
+            time_width: 0.05
+
+    val_ds:
+      _target_: lightfake.datas.dataset.AudioDeepfakeDetectionDataset
+      filepaths: ???
+
+    loaders:
+      batch_size: 32
+      num_workers: 4
+      pin_memory: True
+
+  model:
+    d_model: &d_model 128
+    embedding_dim: &embedding_dim 64
+
+    network:
+      _target_: lightfake.modules.conformer.Conformer
+      input_dim: 120
+      d_model: *d_model
+      subsampling_factor: 2
+      subsampling_filters: 64
+      subsampling_kernel: 3
+      encoder_num_layers_per_stage: 2
+      encoder_num_heads: 8
+      encoder_ffn_dim: 512
+      encoder_kernel_size: 9
+      pooling_att_dim: 64
+      pooling_emb_dim: *embedding_dim
+      dropout: 0.1
+
+    criterion:
+      _target_: lightfake.modules.criterion.OCSoftmax
+      alpha: 20.0
+      margin_real: 0.9
+      margin_fake: 0.2
+
+    optimizer:
+      lr: 1.0
+      betas: [0.9, 0.999]
+      weight_decay: 1e-2
+      eps: 1e-9
+
+    scheduler:
+      model_size: *d_model
+      warmup_steps: 10000
+
+callbacks:
+  lr:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
+
+  cb:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: val_loss
+    save_last: True
+    save_top_k: 10
+    filename: "{epoch}-{val_loss:.5f}"
+    every_n_epochs: 1
+
+trainer:
+  max_epochs: 50
+  strategy: ddp_find_unused_parameters_false
+  accelerator: gpu
+  devices: -1
